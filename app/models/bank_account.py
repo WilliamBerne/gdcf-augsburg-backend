@@ -13,10 +13,10 @@ class BankAccount(Base):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False, unique=True)
 
     account_holder_name = Column(String(200), nullable=False)  # Kontoinhaber
-    street = Column(String(200), nullable=False)
-    postal_code = Column(String(20), nullable=False)
-    city = Column(String(100), nullable=False)
-    bank_name = Column(String(200), nullable=False)            # Kreditinstitut
+    street = Column(String(200), nullable=True)
+    postal_code = Column(String(20), nullable=True)
+    city = Column(String(100), nullable=True)
+    bank_name = Column(String(200), nullable=True)             # Kreditinstitut
     iban = Column(String(34), nullable=False)                  # IBAN, max 34 chars per ISO 13616
 
     mandate_place = Column(String(100), nullable=True)         # Ort

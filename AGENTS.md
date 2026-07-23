@@ -4,7 +4,7 @@
 
 - Treat the local working tree as the source of truth; project summaries may lag behind it.
 - Finish and stabilize the membership-management backend before starting frontend, OCR, or broad DevOps work.
-- Prefer small, reviewable changes. After each meaningful change, summarize it and pause for review before continuing.
+- Prefer coherent, reviewable changes. Group closely related updates, verify the complete batch, and pause when a decision or broader scope needs user review.
 - Do not reorganize working code unless the current task clearly requires it.
 
 ## Before changing code

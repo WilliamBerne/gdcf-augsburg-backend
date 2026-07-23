@@ -51,6 +51,25 @@ def test_create_and_get_bank_account(client):
     assert response.json() == created
 
 
+def test_create_bank_account_with_only_required_fields(client):
+    member = create_member(client)
+
+    response = client.post(
+        "/bank-accounts/",
+        json={
+            "member_id": member["id"],
+            "account_holder_name": "Erika Mustermann",
+            "iban": "DE89370400440532013000",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["street"] is None
+    assert response.json()["postal_code"] is None
+    assert response.json()["city"] is None
+    assert response.json()["bank_name"] is None
+
+
 def test_update_bank_account(client):
     member = create_member(client)
     created = create_bank_account(client, member["id"])
@@ -64,6 +83,37 @@ def test_update_bank_account(client):
     assert response.json()["bank_name"] == "New Bank"
     assert response.json()["city"] == "Friedberg"
     assert response.json()["iban"] == created["iban"]
+
+
+@pytest.mark.parametrize("field", ["street", "postal_code", "city", "bank_name"])
+def test_update_bank_account_can_clear_optional_field(client, field):
+    member = create_member(client)
+    account = create_bank_account(client, member["id"])
+
+    response = client.patch(
+        f"/bank-accounts/{account['id']}",
+        json={field: None},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[field] is None
+
+
+@pytest.mark.parametrize("field", ["account_holder_name", "iban"])
+def test_update_bank_account_rejects_null_required_field(client, field):
+    member = create_member(client)
+    account = create_bank_account(client, member["id"])
+
+    response = client.patch(
+        f"/bank-accounts/{account['id']}",
+        json={field: None},
+    )
+
+    assert response.status_code == 422
+
+    unchanged = client.get(f"/bank-accounts/{account['id']}")
+    assert unchanged.status_code == 200
+    assert unchanged.json()[field] == account[field]
 
 
 def test_delete_bank_account_preserves_member(client):
