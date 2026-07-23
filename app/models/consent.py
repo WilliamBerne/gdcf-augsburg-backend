@@ -44,10 +44,7 @@ class Consent(Base):
     photo_video_withdrawn_at = Column(DateTime(timezone=True), nullable=True)
 
 
-    # For minors: guardian must co-sign (and, from 14+, the minor signs too)
-    guardian_signed_name = Column(String(200), nullable=True)
     photo_video_minor_co_signed = Column(Boolean, nullable=True)
-    minor_signed_name = Column(String(200), nullable=True)  # only used if member is 14–17
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())

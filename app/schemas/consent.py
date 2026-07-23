@@ -32,8 +32,6 @@ class ConsentBase(BaseModel):
     photo_video_signature_status: SignatureStatus = "pending_review"
     photo_video_reviewed_by: Optional[str] = None
 
-    guardian_signed_name: Optional[str] = None
-    minor_signed_name: Optional[str] = None
     photo_video_minor_co_signed: Optional[bool] = None
 
     @model_validator(mode="after")
@@ -70,8 +68,6 @@ class ConsentUpdate(BaseModel):
     photo_video_signer_role: Optional[SignerRole] = None
     photo_video_signature_status: Optional[SignatureStatus] = None
     photo_video_reviewed_by: Optional[str] = None
-    guardian_signed_name: Optional[str] = None
-    minor_signed_name: Optional[str] = None
     photo_video_minor_co_signed: Optional[bool] = None
 
     @model_validator(mode="after")
