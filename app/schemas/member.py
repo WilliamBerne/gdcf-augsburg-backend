@@ -1,10 +1,11 @@
 # app/schemas/member.py
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Literal
 from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
 
 MembershipType = Literal["single", "family", "student", "business"]
+MembershipStatus = Literal["active", "archived"]
 Gender = Literal["male", "female", "other"]
 
 
@@ -72,4 +73,17 @@ class MemberUpdate(BaseModel):
 class MemberRead(MemberBase):
     """What gets returned to API clients."""
     id: int
+    membership_status: MembershipStatus
+    archived_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)  # allows reading from SQLAlchemy objects
+
+
+class ArchivedMemberRead(BaseModel):
+    """Restricted archived-member view for future non-admin users."""
+    id: int
+    last_name: str
+    first_name: str
+    email: Optional[EmailStr] = None
+    membership_status: Literal["archived"]
+    archived_at: datetime
+    model_config = ConfigDict(from_attributes=True)

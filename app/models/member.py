@@ -1,6 +1,6 @@
 # app/models/member.py
 
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 
@@ -10,6 +10,10 @@ from app.models.base import Base
 # added later without an ALTER TABLE migration. Validate against this list
 # in your Pydantic schemas / service layer.
 MEMBERSHIP_TYPES = ("single", "family", "student", "business")
+
+# Membership lifecycle states. Add another state only when its business rules
+# are explicitly defined.
+MEMBERSHIP_STATUSES = ("active", "archived")
 
 # Same reasoning for gender — validate in the Pydantic layer if needed.
 GENDERS = ("male", "female", "other")
@@ -31,6 +35,8 @@ class Member(Base):
     # Membership details
     membership_type = Column(String(20), nullable=False)
     family_member_name = Column(String(200), nullable=True)  # only if membership_type == "family"
+    membership_status = Column(String(20), nullable=False, default="active", index=True)
+    archived_at = Column(DateTime(timezone=True), nullable=True)
 
     # Address
     street = Column(String(200), nullable=False)

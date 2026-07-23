@@ -24,6 +24,9 @@ def create_member(client, **overrides):
 def test_create_and_get_member(client):
     created = create_member(client)
 
+    assert created["membership_status"] == "active"
+    assert created["archived_at"] is None
+
     response = client.get(f"/members/{created['id']}")
 
     assert response.status_code == 200
