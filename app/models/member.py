@@ -39,7 +39,7 @@ class Member(Base):
 
     # Contact
     phone = Column(String(50), nullable=True)
-    email = Column(String(255), unique=True, nullable=False)
+    email = Column(String(255), nullable=True)
 
     # Signature
     signed_place = Column(String(100), nullable=True)

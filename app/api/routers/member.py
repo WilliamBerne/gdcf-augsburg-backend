@@ -12,10 +12,6 @@ router = APIRouter(prefix="/members", tags=["members"])
 
 @router.post("/", response_model=MemberRead, status_code=201)
 def create_member(payload: MemberCreate, db: Session = Depends(get_db)):
-    existing = db.query(Member).filter(Member.email == payload.email).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="A member with this email already exists")
-
     member = Member(**payload.model_dump())
     db.add(member)
     db.commit()

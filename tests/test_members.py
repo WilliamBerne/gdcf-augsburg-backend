@@ -67,13 +67,27 @@ def test_delete_member(client):
     assert client.get(f"/members/{created['id']}").status_code == 404
 
 
-def test_duplicate_email_is_rejected(client):
-    create_member(client)
+def test_duplicate_email_is_allowed(client):
+    first = create_member(client)
 
-    response = client.post("/members/", json=member_payload())
+    response = client.post(
+        "/members/",
+        json=member_payload(first_name="Max"),
+    )
 
-    assert response.status_code == 409
-    assert response.json()["detail"] == "A member with this email already exists"
+    assert response.status_code == 201
+    assert response.json()["email"] == first["email"]
+    assert response.json()["id"] != first["id"]
+
+
+def test_email_is_optional(client):
+    payload = member_payload()
+    del payload["email"]
+
+    response = client.post("/members/", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["email"] is None
 
 
 @pytest.mark.parametrize(

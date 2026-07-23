@@ -20,7 +20,7 @@ class MemberBase(BaseModel):
     postal_code: str
     city: str
     phone: Optional[str] = None
-    email: EmailStr
+    email: Optional[EmailStr] = None
     signed_place: Optional[str] = None
     signed_date: Optional[date] = None
 
