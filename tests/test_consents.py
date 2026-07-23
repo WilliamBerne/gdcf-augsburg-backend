@@ -122,3 +122,149 @@ def test_missing_consent_returns_not_found(client, method):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Consent record not found"
+
+
+def create_document(client, member_id, file_path="members/1/consent.pdf"):
+    response = client.post(
+        "/documents/",
+        json={
+            "member_id": member_id,
+            "document_type": "consent",
+            "file_path": file_path,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_new_consent_starts_pending_human_review(client):
+    member = create_member(client)
+
+    consent = create_consent(client, member["id"])
+
+    assert consent["form_version"] == "gdcf-consent-de-zh-v1"
+    assert consent["data_protection_signature_status"] == "pending_review"
+    assert consent["photo_video_signature_status"] == "pending_review"
+    assert consent["data_protection_reviewed_at"] is None
+    assert consent["photo_video_reviewed_at"] is None
+
+
+def test_verify_and_reset_signature_review(client):
+    member = create_member(client)
+    consent = create_consent(client, member["id"])
+
+    verified = client.patch(
+        f"/consents/{consent['id']}",
+        json={
+            "data_protection_signature_status": "verified",
+            "data_protection_reviewed_by": "Board Member",
+            "data_protection_signer_role": "member",
+        },
+    )
+
+    assert verified.status_code == 200
+    assert verified.json()["data_protection_signature_status"] == "verified"
+    assert verified.json()["data_protection_reviewed_by"] == "Board Member"
+    assert verified.json()["data_protection_reviewed_at"] is not None
+
+    pending = client.patch(
+        f"/consents/{consent['id']}",
+        json={"data_protection_signature_status": "pending_review"},
+    )
+
+    assert pending.status_code == 200
+    assert pending.json()["data_protection_reviewed_by"] is None
+    assert pending.json()["data_protection_reviewed_at"] is None
+
+
+@pytest.mark.parametrize("status", ["verified", "missing", "unclear"])
+def test_completed_review_requires_reviewer(client, status):
+    member = create_member(client)
+    consent = create_consent(client, member["id"])
+
+    response = client.patch(
+        f"/consents/{consent['id']}",
+        json={"photo_video_signature_status": status},
+    )
+
+    assert response.status_code == 422
+
+
+def test_consent_can_link_signed_document_for_same_member(client):
+    member = create_member(client)
+    document = create_document(client, member["id"])
+
+    consent = create_consent(
+        client,
+        member["id"],
+        signed_document_id=document["id"],
+        photo_video_minor_co_signed=True,
+    )
+
+    assert consent["signed_document_id"] == document["id"]
+    assert consent["photo_video_minor_co_signed"] is True
+
+
+def test_consent_rejects_signed_document_from_other_member(client):
+    member = create_member(client)
+    other_member = create_member(client)
+    document = create_document(client, other_member["id"], "members/2/consent.pdf")
+
+    response = client.post(
+        "/consents/",
+        json=consent_payload(member["id"], signed_document_id=document["id"]),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Signed document belongs to a different member"
+
+
+@pytest.mark.parametrize(
+    ("field", "timestamp_field"),
+    [
+        ("data_protection_consent", "data_protection_withdrawn_at"),
+        ("newsletter_opt_in", "newsletter_withdrawn_at"),
+    ],
+)
+def test_withdraw_and_regrant_consent_tracks_timestamp(client, field, timestamp_field):
+    member = create_member(client)
+    consent = create_consent(client, member["id"])
+
+    withdrawn = client.patch(
+        f"/consents/{consent['id']}",
+        json={field: False},
+    )
+
+    assert withdrawn.status_code == 200
+    assert withdrawn.json()[timestamp_field] is not None
+
+    regranted = client.patch(
+        f"/consents/{consent['id']}",
+        json={field: True},
+    )
+
+    assert regranted.status_code == 200
+    assert regranted.json()[timestamp_field] is None
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "data_protection_consent",
+        "data_protection_signature_status",
+        "newsletter_opt_in",
+        "photo_video_consent",
+        "photo_video_signature_status",
+    ],
+)
+def test_consent_update_rejects_null_required_field(client, field):
+    member = create_member(client)
+    consent = create_consent(client, member["id"])
+
+    response = client.patch(
+        f"/consents/{consent['id']}",
+        json={field: None},
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"/consents/{consent['id']}").status_code == 200
