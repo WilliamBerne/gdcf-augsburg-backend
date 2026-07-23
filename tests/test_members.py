@@ -58,6 +58,44 @@ def test_update_member(client):
     assert response.json()["email"] == created["email"]
 
 
+def test_update_member_can_clear_optional_email(client):
+    created = create_member(client)
+
+    response = client.patch(
+        f"/members/{created['id']}",
+        json={"email": None},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email"] is None
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "last_name",
+        "first_name",
+        "membership_type",
+        "street",
+        "postal_code",
+        "city",
+    ],
+)
+def test_update_member_rejects_null_required_field(client, field):
+    created = create_member(client)
+
+    response = client.patch(
+        f"/members/{created['id']}",
+        json={field: None},
+    )
+
+    assert response.status_code == 422
+
+    unchanged = client.get(f"/members/{created['id']}")
+    assert unchanged.status_code == 200
+    assert unchanged.json()[field] == created[field]
+
+
 def test_delete_member(client):
     created = create_member(client)
 

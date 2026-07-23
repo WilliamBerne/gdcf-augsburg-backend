@@ -2,7 +2,7 @@
 
 from datetime import date
 from typing import Optional, Literal
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
 
 MembershipType = Literal["single", "family", "student", "business"]
 Gender = Literal["male", "female", "other"]
@@ -46,6 +46,27 @@ class MemberUpdate(BaseModel):
     email: Optional[EmailStr] = None
     signed_place: Optional[str] = None
     signed_date: Optional[date] = None
+
+    @model_validator(mode="after")
+    def reject_null_required_fields(self):
+        required_fields = {
+            "last_name",
+            "first_name",
+            "membership_type",
+            "street",
+            "postal_code",
+            "city",
+        }
+        null_fields = sorted(
+            field
+            for field in required_fields & self.model_fields_set
+            if getattr(self, field) is None
+        )
+        if null_fields:
+            raise ValueError(
+                f"Fields cannot be null: {', '.join(null_fields)}"
+            )
+        return self
 
 
 class MemberRead(MemberBase):
