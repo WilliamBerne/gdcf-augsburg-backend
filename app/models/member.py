@@ -55,3 +55,4 @@ class Member(Base):
     bank_account = relationship("BankAccount", back_populates="member", uselist=False, cascade="all, delete-orphan")
     consent = relationship("Consent", back_populates="member", uselist=False, cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="member", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="member", uselist=False, passive_deletes=True)
